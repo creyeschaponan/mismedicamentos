@@ -62,10 +62,39 @@ async function start() {
     await bot.launch();
     console.log('🤖 MediBot iniciado correctamente ✅');
     console.log('💊 Listo para recibir recetas y programar recordatorios');
+
+    // ─── Keep-alive: evita que Render duerma el servicio ───
+    startKeepAlive();
   } catch (error) {
     console.error('❌ Error al iniciar:', error);
     process.exit(1);
   }
+}
+
+/**
+ * Self-ping cada 14 minutos para evitar que Render (free tier)
+ * ponga el servicio a dormir tras 15 min de inactividad.
+ * Solo se activa si RENDER_EXTERNAL_URL está configurado.
+ */
+function startKeepAlive() {
+  const url = process.env.RENDER_EXTERNAL_URL;
+  if (!url) {
+    console.log('💤 Keep-alive desactivado (no se detectó RENDER_EXTERNAL_URL)');
+    return;
+  }
+
+  const INTERVAL_MS = 14 * 60 * 1000; // 14 minutos
+
+  setInterval(async () => {
+    try {
+      await fetch(`${url}/health`);
+      console.log(`🏓 Keep-alive ping OK — ${new Date().toLocaleTimeString()}`);
+    } catch (err) {
+      console.error('🏓 Keep-alive ping falló:', err.message);
+    }
+  }, INTERVAL_MS);
+
+  console.log(`🏓 Keep-alive activado: ping cada 14 min a ${url}/health`);
 }
 
 // Graceful shutdown

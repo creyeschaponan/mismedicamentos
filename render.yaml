@@ -16,3 +16,8 @@ services:
         sync: false
       - key: PORT
         value: 3000
+      - key: RENDER_EXTERNAL_URL
+        fromService:
+          type: web
+          name: medibot-telegram
+          property: host
