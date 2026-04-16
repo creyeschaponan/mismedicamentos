@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="https://img.icons8.com/3d-fluency/94/pill.png" alt="MediBot Logo" width="80"/>
+  <img src="https://img.icons8.com/3d-fluency/94/pill.png" alt="MisMedicamentosBot Logo" width="80"/>
 </p>
 
-<h1 align="center">MediBot 💊</h1>
+<h1 align="center">MisMedicamentosBot 💊</h1>
 
 <p align="center">
   <b>Tu asistente inteligente de medicamentos en Telegram</b>
@@ -30,7 +30,7 @@
 
 ## 📋 Descripción
 
-**MediBot** es un bot de Telegram que te ayuda a nunca olvidar tus medicamentos. Envíale una **foto** o **texto** de tu receta médica y él se encargará de:
+**MisMedicamentosBot** es un bot de Telegram que te ayuda a nunca olvidar tus medicamentos. Envíale una **foto** o **texto** de tu receta médica y él se encargará de:
 
 1. 🔍 **Analizar** la receta usando Inteligencia Artificial (Google Gemini)
 2. 💊 **Extraer** los medicamentos, dosis y horarios automáticamente
@@ -58,7 +58,7 @@ Soporta múltiples formatos de programación:
 | Una vez al día | `"una vez al día"` | Intervalo (24h) |
 
 ### 💬 Conversación Natural
-MediBot no es un bot rígido. Puedes hablarle como a un amigo y responderá de forma cálida y empática, siempre enfocado en tu bienestar.
+MisMedicamentosBot no es un bot rígido. Puedes hablarle como a un amigo y responderá de forma cálida y empática, siempre enfocado en tu bienestar.
 
 ### 📊 Gestión Completa
 - 📋 Ver todos tus medicamentos activos
@@ -160,7 +160,7 @@ Si todo está correcto verás:
 ```
 ⏰ Scheduler de recordatorios iniciado
 🌐 Servidor Express escuchando en puerto 3000
-🤖 MediBot iniciado correctamente ✅
+🤖 MisMedicamentosBot iniciado correctamente ✅
 ```
 
 ---
@@ -201,7 +201,7 @@ Si todo está correcto verás:
 >
 > | Variable | Valor |
 > |---|---|
-> | `RENDER_EXTERNAL_URL` | `https://mismedicamentos.onrender.com` |
+> | `RENDER_EXTERNAL_URL` | `https://tuproyectoenreder.onrender.com` |
 
 ---
 
@@ -212,8 +212,8 @@ Muestra el mensaje de bienvenida con instrucciones y ejemplos de uso.
 
 ```
 Usuario: /start
-MediBot: ¡Hola Juan! 👋💊
-         Soy MediBot, tu asistente personal de medicamentos...
+MisMedicamentosBot: ¡Hola Juan! 👋💊
+         Soy MisMedicamentosBot, tu asistente personal de medicamentos...
 ```
 
 ---
@@ -223,7 +223,7 @@ Inicia el flujo para agregar una nueva receta. Puedes enviar una **foto** o escr
 
 ```
 Usuario: /receta
-MediBot: 📋 ¡Vamos a agregar una receta!
+MisMedicamentosBot: 📋 ¡Vamos a agregar una receta!
          Puedes enviarme:
          📸 Una foto de tu receta
          ✍️ O escríbela como texto
@@ -250,7 +250,7 @@ Lista todos tus medicamentos activos con próxima toma, horarios y días restant
 
 ```
 Usuario: /mis_medicamentos
-MediBot: 💊 Tus medicamentos activos:
+MisMedicamentosBot: 💊 Tus medicamentos activos:
 
          ▸ Amoxicilina (500mg)
            ⏰ Cada 8h
@@ -270,7 +270,7 @@ Muestra una lista de tus medicamentos activos con botones para cancelar el que e
 
 ```
 Usuario: /cancelar
-MediBot: 🗑️ ¿Qué medicamento quieres cancelar?
+MisMedicamentosBot: 🗑️ ¿Qué medicamento quieres cancelar?
          [❌ Amoxicilina (500mg)]
          [❌ Paracetamol (500mg)]
          [↩️ No cancelar nada]
@@ -283,7 +283,7 @@ Muestra todos los comandos disponibles y los formatos de horario que el bot enti
 
 ```
 Usuario: /ayuda
-MediBot: 📖 Comandos disponibles:
+MisMedicamentosBot: 📖 Comandos disponibles:
          ▸ /start — Reiniciar el bot
          ▸ /receta — Agregar una nueva receta
          ▸ /mis_medicamentos — Ver medicamentos activos
@@ -294,11 +294,11 @@ MediBot: 📖 Comandos disponibles:
 ---
 
 ### 📸 Enviar foto de receta (sin comando)
-Simplemente envía una foto de tu receta y MediBot la analizará automáticamente con Gemini Vision.
+Simplemente envía una foto de tu receta y MisMedicamentosBot la analizará automáticamente con Gemini Vision.
 
 ```
 Usuario: [envía foto de receta]
-MediBot: 📸 Analizando tu receta... dame un momento 🔍
+MisMedicamentosBot: 📸 Analizando tu receta... dame un momento 🔍
          ✅ ¡Receta registrada! Encontré 2 medicamentos:
          💊 Ibuprofeno — 600mg
            ⏰ Cada 8 horas
@@ -310,16 +310,16 @@ MediBot: 📸 Analizando tu receta... dame un momento 🔍
 ---
 
 ### 💬 Conversación natural (sin comando)
-Escribe lo que quieras y MediBot responderá de forma natural y amigable. Sabe sobre tus medicamentos activos y te puede dar contexto.
+Escribe lo que quieras y MisMedicamentosBot responderá de forma natural y amigable. Sabe sobre tus medicamentos activos y te puede dar contexto.
 
 ```
 Usuario: Hola, ¿cómo estás?
-MediBot: ¡Hola! 😊 Estoy muy bien, gracias por preguntar.
+MisMedicamentosBot: ¡Hola! 😊 Estoy muy bien, gracias por preguntar.
          ¿En qué te puedo ayudar hoy? ¿Necesitas agregar
          alguna receta o ver tus medicamentos?
 
 Usuario: ¿Cuántas pastillas me faltan?
-MediBot: Según tus registros, tienes 2 medicamentos activos:
+MisMedicamentosBot: Según tus registros, tienes 2 medicamentos activos:
          Amoxicilina y Paracetamol. Si necesitas más detalle
          usa /mis_medicamentos 💊
 ```
@@ -327,10 +327,10 @@ MediBot: Según tus registros, tienes 2 medicamentos activos:
 ---
 
 ### ⏰ Recordatorio automático
-Cuando es hora de tomar tu medicamento, MediBot te envía un mensaje:
+Cuando es hora de tomar tu medicamento, MisMedicamentosBot te envía un mensaje:
 
 ```
-MediBot: ⏰ ¡Hora de tu medicamento!
+MisMedicamentosBot: ⏰ ¡Hora de tu medicamento!
          Hola Juan 👋
          💊 Amoxicilina — 500mg
          🕐 Son las 14:00
@@ -340,7 +340,7 @@ MediBot: ⏰ ¡Hora de tu medicamento!
 
 Al completar un tratamiento:
 ```
-MediBot: 🎉 ¡Tratamiento completado!
+MisMedicamentosBot: 🎉 ¡Tratamiento completado!
          Has terminado tu tratamiento de Amoxicilina.
          ¡Felicidades por ser constante! 💪
          Recuerda consultar con tu doctor si tienes alguna duda.
@@ -396,5 +396,5 @@ Este proyecto es de uso personal. Desarrollado por [@creyeschaponan](https://git
 ---
 
 <p align="center">
-  Hecho con ❤️ y mucha ☕ | Powered by <b>Google Gemini AI</b>
+  Hecho con ❤️ y mucha ☕</b>
 </p>
