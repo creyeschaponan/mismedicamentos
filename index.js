@@ -63,7 +63,7 @@ async function start() {
     console.log('🤖 MediBot iniciado correctamente ✅');
     console.log('💊 Listo para recibir recetas y programar recordatorios');
 
-    // ─── Keep-alive: evita que Render duerma el servicio ───
+    // ─── Keep-alive: evita que el servicio se duerma en planes gratuitos ───
     startKeepAlive();
   } catch (error) {
     console.error('❌ Error al iniciar:', error);
@@ -72,14 +72,14 @@ async function start() {
 }
 
 /**
- * Self-ping cada 14 minutos para evitar que Render (free tier)
- * ponga el servicio a dormir tras 15 min de inactividad.
- * Solo se activa si RENDER_EXTERNAL_URL está configurado.
+ * Self-ping cada 14 minutos para evitar que el PaaS (ej. Sevalla/Render free tier)
+ * ponga el servicio a dormir tras inactividad.
+ * Solo se activa si APP_URL está configurado.
  */
 function startKeepAlive() {
-  const url = process.env.RENDER_EXTERNAL_URL;
+  const url = process.env.APP_URL || process.env.RENDER_EXTERNAL_URL;
   if (!url) {
-    console.log('💤 Keep-alive desactivado (no se detectó RENDER_EXTERNAL_URL)');
+    console.log('💤 Keep-alive desactivado (no se detectó APP_URL)');
     return;
   }
 
