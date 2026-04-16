@@ -243,7 +243,11 @@ Si todo está correcto verás:
 
 6. Clic en **Deploy** 🚀
 
-> ⚠️ **Nota:** En el plan gratuito de Render, el servicio se "duerme" tras 15 minutos de inactividad. Esto puede provocar que los recordatorios se retrasen hasta que el servicio despierte. Considera un plan Starter ($7/mes) para servicio continuo 24/7.
+> ⚠️ **Nota:** En el plan gratuito de Render, el servicio se "duerme" tras 15 minutos de inactividad. Este bot incluye un **self-ping automático** cada 14 minutos para evitarlo. Solo necesitas agregar esta variable de entorno adicional:
+>
+> | Variable | Valor |
+> |---|---|
+> | `RENDER_EXTERNAL_URL` | `https://mismedicamentos.onrender.com` |
 
 ---
 

@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: medibot-telegram
+    name: mismedicamentosbot
     runtime: node
     plan: free
     buildCommand: npm install
@@ -19,5 +19,5 @@ services:
       - key: RENDER_EXTERNAL_URL
         fromService:
           type: web
-          name: medibot-telegram
+          name: mismedicamentosbot
           property: host
