@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "node --watch index.js"
+    "dev": "node --watch index.js",
+    "test": "jest"
   },
   "dependencies": {
     "@google/genai": "^1.0.0",
@@ -14,5 +15,8 @@
     "express": "^4.21.0",
     "node-schedule": "^2.1.1",
     "telegraf": "^4.16.0"
+  },
+  "devDependencies": {
+    "jest": "^30.3.0"
   }
 }

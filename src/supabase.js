@@ -296,6 +296,60 @@ async function getPendingMedications(userId) {
   return data || [];
 }
 
+/**
+ * Desactiva todos los medicamentos activos de un usuario
+ */
+async function deactivateAllMedications(userId) {
+  const { data, error } = await supabase
+    .from('medications')
+    .update({ is_active: false, next_dose_at: null })
+    .eq('user_id', userId)
+    .eq('is_active', true)
+    .select();
+
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Actualiza el horario de un medicamento existente (reprogramación total)
+ */
+async function updateMedicationSchedule(medicationId, mode, frequencyHours, scheduleTimes) {
+  const { data: med } = await supabase
+    .from('medications')
+    .select('*')
+    .eq('id', medicationId)
+    .single();
+
+  if (!med) throw new Error('Medicamento no encontrado');
+
+  const now = new Date();
+  let nextDose;
+  
+  if (mode === 'times' && scheduleTimes && scheduleTimes.length > 0) {
+    nextDose = calculateNextScheduledTime(scheduleTimes, now);
+  } else if (frequencyHours) {
+    nextDose = new Date(now.getTime() + frequencyHours * 60 * 60 * 1000);
+  } else {
+    nextDose = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  }
+
+  const { data, error } = await supabase
+    .from('medications')
+    .update({
+      schedule_mode: mode || med.schedule_mode,
+      frequency_hours: frequencyHours || null,
+      schedule_times: scheduleTimes || null,
+      next_dose_at: nextDose.toISOString()
+    })
+    .eq('id', medicationId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
 module.exports = {
   supabase,
   getOrCreateUser,
@@ -306,6 +360,8 @@ module.exports = {
   getMedicationsDueNow,
   advanceNextDose,
   deactivateMedication,
+  deactivateAllMedications,
+  updateMedicationSchedule,
   getPendingMedications,
   calculateNextScheduledTime,
 };
