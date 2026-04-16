@@ -1,4 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
+const { DateTime } = require('luxon');
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -28,10 +29,24 @@ async function getOrCreateUser(chatId, firstName) {
 }
 
 /**
+ * Actualiza el timezone del usuario
+ */
+async function updateUserTimezone(userId, timezone) {
+  const { data, error } = await supabase
+    .from('users')
+    .update({ timezone })
+    .eq('id', userId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+/**
  * Crea una receta y sus medicamentos asociados
  */
 async function createPrescription(userId, rawText, medications) {
-  // Crear la receta
   const { data: prescription, error: prescError } = await supabase
     .from('prescriptions')
     .insert({ user_id: userId, raw_text: rawText })
@@ -40,7 +55,6 @@ async function createPrescription(userId, rawText, medications) {
 
   if (prescError) throw prescError;
 
-  // Crear los medicamentos
   const medsToInsert = medications.map(med => ({
     prescription_id: prescription.id,
     user_id: userId,
@@ -65,7 +79,7 @@ async function createPrescription(userId, rawText, medications) {
 /**
  * Programa la primera toma de un medicamento según su modo
  */
-async function setFirstDose(medicationId, firstDoseAt) {
+async function setFirstDose(medicationId, firstDoseAt, timezone = 'America/Lima') {
   const firstDose = new Date(firstDoseAt);
 
   const { data: med } = await supabase
@@ -83,13 +97,10 @@ async function setFirstDose(medicationId, firstDoseAt) {
   let nextDose;
 
   if (med.schedule_mode === 'times' && med.schedule_times && med.schedule_times.length > 0) {
-    // Modo horarios específicos: calcular la próxima toma después de ahora
-    nextDose = calculateNextScheduledTime(med.schedule_times, firstDose);
+    nextDose = calculateNextScheduledTime(med.schedule_times, firstDose, timezone);
   } else if (med.frequency_hours) {
-    // Modo intervalo: siguiente toma = primera + frecuencia
     nextDose = new Date(firstDose.getTime() + med.frequency_hours * 60 * 60 * 1000);
   } else {
-    // Fallback: 24 horas
     nextDose = new Date(firstDose.getTime() + 24 * 60 * 60 * 1000);
   }
 
@@ -109,9 +120,9 @@ async function setFirstDose(medicationId, firstDoseAt) {
 }
 
 /**
- * Configura un medicamento con horarios específicos y programa la primera toma automáticamente
+ * Configura un medicamento con horarios específicos directamente, asumiendo "ahora" como punto de inicio
  */
-async function activateTimesSchedule(medicationId) {
+async function activateTimesSchedule(medicationId, timezone = 'America/Lima') {
   const { data: med } = await supabase
     .from('medications')
     .select('*')
@@ -123,7 +134,7 @@ async function activateTimesSchedule(medicationId) {
   }
 
   const now = new Date();
-  const nextDose = calculateNextScheduledTime(med.schedule_times, now);
+  const nextDose = calculateNextScheduledTime(med.schedule_times, now, timezone);
 
   const endsAt = med.duration_days
     ? new Date(now.getTime() + med.duration_days * 24 * 60 * 60 * 1000)
@@ -145,13 +156,12 @@ async function activateTimesSchedule(medicationId) {
 }
 
 /**
- * Calcula la próxima hora programada basándose en una lista de horarios diarios
+ * Calcula la próxima hora programada basándose en una lista de horarios diarios, usando luxon para respetar la zona horaria del usuario.
  */
-function calculateNextScheduledTime(scheduleTimes, fromDate) {
-  const now = fromDate || new Date();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+function calculateNextScheduledTime(scheduleTimes, fromDate, timezone = 'America/Lima') {
+  let now = DateTime.fromJSDate(fromDate || new Date()).setZone(timezone);
+  const currentMinutes = now.hour * 60 + now.minute;
 
-  // Convertir horarios a minutos y ordenar
   const timeSlots = scheduleTimes
     .map(t => {
       const [h, m] = t.split(':').map(Number);
@@ -159,21 +169,15 @@ function calculateNextScheduledTime(scheduleTimes, fromDate) {
     })
     .sort((a, b) => a.totalMinutes - b.totalMinutes);
 
-  // Buscar el próximo horario hoy
   for (const slot of timeSlots) {
     if (slot.totalMinutes > currentMinutes) {
-      const next = new Date(now);
-      next.setHours(slot.hours, slot.minutes, 0, 0);
-      return next;
+      return now.set({ hour: slot.hours, minute: slot.minutes, second: 0, millisecond: 0 }).toJSDate();
     }
   }
 
-  // Si ya pasaron todos los horarios de hoy, programar el primero de mañana
   const firstSlot = timeSlots[0];
-  const tomorrow = new Date(now);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  tomorrow.setHours(firstSlot.hours, firstSlot.minutes, 0, 0);
-  return tomorrow;
+  const tomorrow = now.plus({ days: 1 }).set({ hour: firstSlot.hours, minute: firstSlot.minutes, second: 0, millisecond: 0 });
+  return tomorrow.toJSDate();
 }
 
 /**
@@ -199,7 +203,7 @@ async function getMedicationsDueNow() {
 
   const { data, error } = await supabase
     .from('medications')
-    .select('*, users(chat_id, first_name)')
+    .select('*, users(chat_id, first_name, timezone)')
     .eq('is_active', true)
     .not('next_dose_at', 'is', null)
     .lte('next_dose_at', now.toISOString());
@@ -214,37 +218,33 @@ async function getMedicationsDueNow() {
 async function advanceNextDose(medicationId) {
   const { data: med } = await supabase
     .from('medications')
-    .select('*')
+    .select('*, users(timezone)')
     .eq('id', medicationId)
     .single();
 
   if (!med) return null;
+  const timezone = med.users?.timezone || 'America/Lima';
 
   let nextDose;
 
   if (med.schedule_mode === 'times' && med.schedule_times && med.schedule_times.length > 0) {
-    // Modo horarios: calcular la próxima hora programada
     const currentNextDose = new Date(med.next_dose_at);
-    nextDose = calculateNextScheduledTime(med.schedule_times, currentNextDose);
+    nextDose = calculateNextScheduledTime(med.schedule_times, currentNextDose, timezone);
     
-    // Si la siguiente hora calculada es la misma (porque acabamos de pasar), avanzar 1 minuto y recalcular
     if (nextDose.getTime() <= currentNextDose.getTime()) {
       const adjusted = new Date(currentNextDose.getTime() + 60000);
-      nextDose = calculateNextScheduledTime(med.schedule_times, adjusted);
+      nextDose = calculateNextScheduledTime(med.schedule_times, adjusted, timezone);
     }
   } else if (med.frequency_hours) {
-    // Modo intervalo
     nextDose = new Date(
       new Date(med.next_dose_at).getTime() + med.frequency_hours * 60 * 60 * 1000
     );
   } else {
-    // Fallback: 24h
     nextDose = new Date(
       new Date(med.next_dose_at).getTime() + 24 * 60 * 60 * 1000
     );
   }
 
-  // Si ya pasó la fecha de finalización, desactivar
   if (med.ends_at && nextDose > new Date(med.ends_at)) {
     const { data } = await supabase
       .from('medications')
@@ -317,17 +317,18 @@ async function deactivateAllMedications(userId) {
 async function updateMedicationSchedule(medicationId, mode, frequencyHours, scheduleTimes) {
   const { data: med } = await supabase
     .from('medications')
-    .select('*')
+    .select('*, users(timezone)')
     .eq('id', medicationId)
     .single();
 
   if (!med) throw new Error('Medicamento no encontrado');
+  const timezone = med.users?.timezone || 'America/Lima';
 
   const now = new Date();
   let nextDose;
   
   if (mode === 'times' && scheduleTimes && scheduleTimes.length > 0) {
-    nextDose = calculateNextScheduledTime(scheduleTimes, now);
+    nextDose = calculateNextScheduledTime(scheduleTimes, now, timezone);
   } else if (frequencyHours) {
     nextDose = new Date(now.getTime() + frequencyHours * 60 * 60 * 1000);
   } else {
@@ -353,6 +354,7 @@ async function updateMedicationSchedule(medicationId, mode, frequencyHours, sche
 module.exports = {
   supabase,
   getOrCreateUser,
+  updateUserTimezone,
   createPrescription,
   setFirstDose,
   activateTimesSchedule,

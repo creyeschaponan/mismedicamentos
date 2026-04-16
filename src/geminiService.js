@@ -126,9 +126,28 @@ async function chat(userMessage, context = '') {
   }
 }
 
+async function analyzeTimezone(locationText) {
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [{ role: 'user', parts: [{ text: `Determina la zona horaria oficial en formato IANA (ejemplo: America/Lima, Europe/Madrid) basándote en la siguiente ubicación que el usuario escribió: "${locationText}".\nResponde ÚNICAMENTE con un objeto JSON válido con esta estructura: {"timezone": "Zona/Horaria"}. Si no puedes deducirlo o es inválido, devuelve null.` }] }],
+    });
+    
+    const cleaned = response.text.trim().replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    return JSON.parse(cleaned).timezone;
+  } catch (error) {
+    if (error?.status === 429 || (error?.message || '').includes('429') || (error?.message || '').toLowerCase().includes('quota')) {
+      throw new RateLimitError('Límite de peticiones alcanzado.');
+    }
+    console.error('Error analizando timezone:', error.message);
+    return 'America/Lima'; // Fallback
+  }
+}
+
 module.exports = {
   RateLimitError,
   analyzePrescriptionText,
   analyzePrescriptionImage,
   chat,
+  analyzeTimezone,
 };

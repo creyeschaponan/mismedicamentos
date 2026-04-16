@@ -52,13 +52,16 @@ function startScheduler(bot) {
   });
 }
 
+const { DateTime } = require('luxon');
+
 /**
  * Formatea el mensaje de recordatorio
  */
 function formatReminderMessage(med, firstName) {
-  const now = new Date();
-  const hours = now.getHours().toString().padStart(2, '0');
-  const minutes = now.getMinutes().toString().padStart(2, '0');
+  const timezone = med.users?.timezone || 'America/Lima';
+  const now = DateTime.local().setZone(timezone);
+  const hours = now.toFormat('HH');
+  const minutes = now.toFormat('mm');
 
   let message = `⏰ <b>¡Hora de tu medicamento!</b>\n\n`;
   message += `Hola ${firstName} 👋\n\n`;
@@ -72,7 +75,7 @@ function formatReminderMessage(med, firstName) {
 
   if (med.ends_at) {
     const endsAt = new Date(med.ends_at);
-    const daysLeft = Math.ceil((endsAt - now) / (24 * 60 * 60 * 1000));
+    const daysLeft = Math.ceil((endsAt - now.toJSDate()) / (24 * 60 * 60 * 1000));
     if (daysLeft > 0) {
       message += `📅 Te quedan <b>${daysLeft} día${daysLeft !== 1 ? 's' : ''}</b> de tratamiento\n`;
     }
