@@ -61,7 +61,7 @@ REGLAS DE MODO E INSTRUCCIONES:
 Ejemplos:
 - "Ibuprofeno 600mg cada 8 horas" → intent: "prescription"
 - "Paracetamol D, A, C" → intent: "prescription", horarios: ["08:00", "13:00", "20:00"], instrucciones: "Tomar en el Desayuno, Almuerzo y Cena"
-- "Reprogramar Omeprazol a las 10:30 de la mañana" → intent: "reschedule"
+- "Reprogramar Omeprazol a las 10:30 de la mañana" → intent: "reschedule"`;
 
 /**
  * Analiza una receta en texto y extrae medicamentos
