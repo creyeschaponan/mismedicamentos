@@ -247,22 +247,160 @@ Si todo está correcto verás:
 
 ---
 
-## 🤖 Comandos
+## 🤖 Comandos del Bot
+
+### `/start` — Iniciar el bot
+Muestra el mensaje de bienvenida con instrucciones y ejemplos de uso.
+
+```
+Usuario: /start
+MediBot: ¡Hola Juan! 👋💊
+         Soy MediBot, tu asistente personal de medicamentos...
+```
+
+---
+
+### `/receta` — Agregar nueva receta
+Inicia el flujo para agregar una nueva receta. Puedes enviar una **foto** o escribir el **texto** de tu receta.
+
+```
+Usuario: /receta
+MediBot: 📋 ¡Vamos a agregar una receta!
+         Puedes enviarme:
+         📸 Una foto de tu receta
+         ✍️ O escríbela como texto
+```
+
+**Ejemplos de texto que el bot entiende:**
+
+```
+• "Amoxicilina 500mg cada 8 horas por 7 días"
+• "Ibuprofeno 600mg a las 8am y 8pm por 5 días"
+• "Paracetamol a las 2:00 PM y a las 4:00 PM"
+• "Omeprazol en ayunas por 14 días"
+• "Vitamina D después del almuerzo, Hierro antes de dormir"
+```
+
+Después de analizar la receta, el bot te preguntará:
+- **Modo intervalo** ("cada 8 horas"): ¿Cuándo es tu primera toma? → "Ahora mismo" o "A otra hora"
+- **Modo horarios** ("a las 8am y 2pm"): ¿Activo los recordatorios? → "Sí, activar"
+
+---
+
+### `/mis_medicamentos` — Ver medicamentos activos
+Lista todos tus medicamentos activos con próxima toma, horarios y días restantes.
+
+```
+Usuario: /mis_medicamentos
+MediBot: 💊 Tus medicamentos activos:
+
+         ▸ Amoxicilina (500mg)
+           ⏰ Cada 8h
+           📅 Por 7 días
+           📌 Próxima toma: 15/04/2026, 02:00 p.m.
+           ⏳ Quedan 5 días
+
+         ▸ Paracetamol (500mg)
+           🕐 Horarios: 08:00, 14:00, 22:00
+           📌 Próxima toma: 15/04/2026, 08:00 a.m.
+```
+
+---
+
+### `/cancelar` — Cancelar un recordatorio
+Muestra una lista de tus medicamentos activos con botones para cancelar el que elijas.
+
+```
+Usuario: /cancelar
+MediBot: 🗑️ ¿Qué medicamento quieres cancelar?
+         [❌ Amoxicilina (500mg)]
+         [❌ Paracetamol (500mg)]
+         [↩️ No cancelar nada]
+```
+
+---
+
+### `/ayuda` — Mostrar ayuda
+Muestra todos los comandos disponibles y los formatos de horario que el bot entiende.
+
+```
+Usuario: /ayuda
+MediBot: 📖 Comandos disponibles:
+         ▸ /start — Reiniciar el bot
+         ▸ /receta — Agregar una nueva receta
+         ▸ /mis_medicamentos — Ver medicamentos activos
+         ▸ /cancelar — Cancelar un recordatorio
+         ▸ /ayuda — Mostrar esta ayuda
+```
+
+---
+
+### 📸 Enviar foto de receta (sin comando)
+Simplemente envía una foto de tu receta y MediBot la analizará automáticamente con Gemini Vision.
+
+```
+Usuario: [envía foto de receta]
+MediBot: 📸 Analizando tu receta... dame un momento 🔍
+         ✅ ¡Receta registrada! Encontré 2 medicamentos:
+         💊 Ibuprofeno — 600mg
+           ⏰ Cada 8 horas
+           📅 Por 5 días
+         💊 Omeprazol — 20mg
+           🕐 Horarios: 07:00
+```
+
+---
+
+### 💬 Conversación natural (sin comando)
+Escribe lo que quieras y MediBot responderá de forma natural y amigable. Sabe sobre tus medicamentos activos y te puede dar contexto.
+
+```
+Usuario: Hola, ¿cómo estás?
+MediBot: ¡Hola! 😊 Estoy muy bien, gracias por preguntar.
+         ¿En qué te puedo ayudar hoy? ¿Necesitas agregar
+         alguna receta o ver tus medicamentos?
+
+Usuario: ¿Cuántas pastillas me faltan?
+MediBot: Según tus registros, tienes 2 medicamentos activos:
+         Amoxicilina y Paracetamol. Si necesitas más detalle
+         usa /mis_medicamentos 💊
+```
+
+---
+
+### ⏰ Recordatorio automático
+Cuando es hora de tomar tu medicamento, MediBot te envía un mensaje:
+
+```
+MediBot: ⏰ ¡Hora de tu medicamento!
+         Hola Juan 👋
+         💊 Amoxicilina — 500mg
+         🕐 Son las 14:00
+         📅 Te quedan 5 días de tratamiento
+         ¡No olvides tomarlo! Tu salud es lo primero 💪
+```
+
+Al completar un tratamiento:
+```
+MediBot: 🎉 ¡Tratamiento completado!
+         Has terminado tu tratamiento de Amoxicilina.
+         ¡Felicidades por ser constante! 💪
+         Recuerda consultar con tu doctor si tienes alguna duda.
+```
+
+---
+
+### 📋 Resumen de comandos
 
 | Comando | Descripción |
 |---------|-------------|
-| `/start` | Mensaje de bienvenida e instrucciones |
-| `/receta` | Agregar una nueva receta médica |
-| `/mis_medicamentos` | Ver medicamentos activos y próximas tomas |
-| `/cancelar` | Cancelar el recordatorio de un medicamento |
-| `/ayuda` | Mostrar todos los comandos disponibles |
-
-### Uso sin comandos
-
-También puedes interactuar directamente:
-- 📸 **Envía una foto** de tu receta
-- ✍️ **Escribe tu receta** como texto
-- 💬 **Conversa** con el bot sobre cualquier tema de salud
+| `/start` | 👋 Mensaje de bienvenida e instrucciones |
+| `/receta` | 📋 Agregar una nueva receta (foto o texto) |
+| `/mis_medicamentos` | 💊 Ver medicamentos activos y próximas tomas |
+| `/cancelar` | ❌ Cancelar el recordatorio de un medicamento |
+| `/ayuda` | ❓ Mostrar comandos y formatos soportados |
+| *Enviar foto* | 📸 Analizar foto de receta automáticamente |
+| *Escribir texto* | ✍️ Analizar texto o conversar con el bot |
 
 ---
 
