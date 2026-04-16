@@ -142,58 +142,12 @@ PORT=3000
 
 ### 4. Configurar la base de datos
 
-Ejecuta las siguientes migraciones en el **SQL Editor** de Supabase:
+Configura tus tablas en Supabase según los requisitos de tu aplicación. Necesitarás tablas para:
+- `users`: Usuarios de Telegram
+- `prescriptions`: Recetas registradas
+- `medications`: Medicamentos, frecuencias y horarios programados
 
-```sql
--- Tabla de usuarios
-CREATE TABLE public.users (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  chat_id bigint UNIQUE NOT NULL,
-  first_name text,
-  timezone text DEFAULT 'America/Lima',
-  created_at timestamptz DEFAULT now()
-);
-
--- Tabla de recetas
-CREATE TABLE public.prescriptions (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-  raw_text text,
-  created_at timestamptz DEFAULT now()
-);
-
--- Tabla de medicamentos
-CREATE TABLE public.medications (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  prescription_id uuid REFERENCES public.prescriptions(id) ON DELETE CASCADE,
-  user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-  name text NOT NULL,
-  dosage text,
-  frequency_hours integer,
-  duration_days integer,
-  first_dose_at timestamptz,
-  next_dose_at timestamptz,
-  ends_at timestamptz,
-  is_active boolean DEFAULT true,
-  schedule_times text[] DEFAULT NULL,
-  schedule_mode text DEFAULT 'interval' CHECK (schedule_mode IN ('interval', 'times')),
-  created_at timestamptz DEFAULT now()
-);
-
--- Índices
-CREATE INDEX idx_medications_user_active ON public.medications(user_id, is_active) WHERE is_active = true;
-CREATE INDEX idx_medications_next_dose ON public.medications(next_dose_at) WHERE is_active = true;
-CREATE INDEX idx_users_chat_id ON public.users(chat_id);
-
--- RLS
-ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.prescriptions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.medications ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Service role full access" ON public.users FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Service role full access" ON public.prescriptions FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Service role full access" ON public.medications FOR ALL USING (true) WITH CHECK (true);
-```
+*Nota: El script DDL exacto no se incluye en este README público.*
 
 ### 5. Iniciar el bot
 
