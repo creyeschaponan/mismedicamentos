@@ -230,7 +230,8 @@ function setupBot(bot) {
       userStates.set(ctx.chat.id, { ...previousState, state: 'waiting_custom_time', currentMedId: medId });
       await ctx.answerCbQuery();
       await ctx.editMessageText(
-        `🕐 Escríbeme la hora deseada (ej: 08:00, 2:30pm, 14:30, 8am).`,
+        `🕐 Escríbeme la hora de inicio o todos tus horarios.\n\n` +
+        `<i>Ejemplos: "08:00", "9am, 1pm y 7pm", "almuerzo y cena"</i>`,
         { parse_mode: 'HTML' }
       );
     } catch (error) {
@@ -398,21 +399,30 @@ async function handleReschedule(ctx, user, rescheduleData) {
 }
 
 async function handleCustomTime(ctx, medId, text, user) {
-  const parsed = parseTimeString(text.trim());
+  const times = await analyzeCustomTimes(text.trim());
 
-  if (parsed === null) {
+  if (!times || times.length === 0) {
     await ctx.replyWithHTML(
-      `⚠️ No pude entender esa hora. Intenta con estos formatos:\n\n` +
-      `<i>Ejemplos: 08:00, 2:30pm, 14:30, 8am, 10:00 PM</i>`
+      `⚠️ No pude entender esas horas.\n\n` +
+      `<i>Intenta decirme cosas como: "9am, 1pm y 7pm" o "en el desayuno, almuerzo y cena".</i>`
     );
     return;
   }
 
   try {
     const tz = user.timezone || 'America/Lima';
-    const doseTime = DateTime.local().setZone(tz).set({ hour: parsed.hours, minute: parsed.minutes, second: 0, millisecond: 0 });
+    const { data: medBefore } = await require('./supabase').supabase.from('medications').select('*').eq('id', medId).single();
+    let med;
 
-    const med = await setFirstDose(medId, doseTime.toJSDate(), tz);
+    // Si el usuario nos da varios horarios o el medicamento ya era modo "horarios" e indicaron cambiarlo
+    if (times.length > 1 || medBefore.schedule_mode === 'times') {
+       med = await updateMedicationSchedule(medId, 'times', null, times);
+    } else {
+       // Es modo intervalo (ej. cada 8h), y el usuario dio 1 sola hora de inicio
+       const [hours, minutes] = times[0].split(':').map(Number);
+       const doseTime = DateTime.local().setZone(tz).set({ hour: hours, minute: minutes, second: 0, millisecond: 0 });
+       med = await setFirstDose(medId, doseTime.toJSDate(), tz);
+    }
     
     const currentState = userStates.get(ctx.chat.id);
     if (currentState && currentState.medsToConfirm) {
@@ -422,9 +432,10 @@ async function handleCustomTime(ctx, medId, text, user) {
     }
 
     const nextDoseStr = formatDateTime(new Date(med.next_dose_at), tz);
-    const timeStr = `${parsed.hours.toString().padStart(2, '0')}:${parsed.minutes.toString().padStart(2, '0')}`;
+    const timeStr = times.join(', ');
+    
     await ctx.replyWithHTML(
-      `✅ ¡Perfecto! Primera toma de <b>${med.name}</b> configurada a las <b>${timeStr}</b>\n\n` +
+      `✅ ¡Perfecto! Horario de <b>${med.name}</b> configurado: <b>${timeStr}</b>\n\n` +
       `⏰ Tu próximo recordatorio será: <b>${nextDoseStr}</b>`
     );
     
@@ -481,14 +492,17 @@ async function processMedications(ctx, user, medications, rawText) {
   let summary = `✅ Encontré ${savedMeds.length} medicamento${savedMeds.length > 1 ? 's' : ''}:\n\n`;
   for (let i = 0; i < savedMeds.length; i++) {
     const med = savedMeds[i];
+    const orig = medications[i];
     summary += `💊 <b>${med.name}</b>`;
     if (med.dosage) summary += ` — ${med.dosage}\n`; else summary += `\n`;
     if (med.schedule_mode === 'times' && med.schedule_times) summary += `  🕐 Horarios: ${med.schedule_times.join(', ')}\n`;
     else if (med.frequency_hours) summary += `  ⏰ Cada ${med.frequency_hours} horas\n`;
+    if (orig.instrucciones) summary += `  📝 <i>${orig.instrucciones}</i>\n`;
   }
   await ctx.replyWithHTML(summary);
 
-  userStates.set(ctx.chat.id, { state: 'confirming_medications', medsToConfirm: [...savedMeds] });
+  const medsQueue = savedMeds.map((m, i) => ({ ...m, orig_instrucciones: medications[i].instrucciones || null }));
+  userStates.set(ctx.chat.id, { state: 'confirming_medications', medsToConfirm: medsQueue });
   await promptNextMedication(ctx, ctx.chat.id, user);
 }
 
@@ -507,10 +521,15 @@ async function promptNextMedication(ctx, chatId, user) {
   const med = medsToConfirm.shift();
   userStates.set(chatId, { state: 'confirming_medications', medsToConfirm });
 
+  let extraInfo = '';
+  if (med.orig_instrucciones) {
+    extraInfo = `\n📝 <i>Indicación médica: "${med.orig_instrucciones}"</i>\n`;
+  }
+
   if (med.schedule_mode === 'times' && med.schedule_times && med.schedule_times.length > 0) {
     const timesStr = med.schedule_times.join(', ');
     await ctx.replyWithHTML(
-      `🕐 <b>${med.name}</b> tiene horarios específicos: <b>${timesStr}</b>\n\n¿Están bien estos horarios para activarlos ahora?`,
+      `🕐 <b>${med.name}</b>${extraInfo}\nEl bot sugiere programarlo a las: <b>${timesStr}</b>\n\n¿Están bien estos horarios para activarlos ahora?`,
       Markup.inlineKeyboard([
         [Markup.button.callback('✅ Sí, activar recordatorios', `activate_times_${med.id}`)],
         [Markup.button.callback('🕐 Quiero cambiarlos', `set_dose_custom_${med.id}`)],
@@ -518,10 +537,10 @@ async function promptNextMedication(ctx, chatId, user) {
     );
   } else {
     await ctx.replyWithHTML(
-      `🕐 <b>¿Cuándo tomas la siguiente dosis de ${med.name}?</b>`,
+      `🕐 <b>¿Cuándo tomas la siguiente dosis de ${med.name}?</b>${extraInfo}`,
       Markup.inlineKeyboard([
         [Markup.button.callback('⏰ Ahora mismo', `set_dose_now_${med.id}`)],
-        [Markup.button.callback('🕐 Escribiré una hora exacta', `set_dose_custom_${med.id}`)],
+        [Markup.button.callback('🕐 Escribiré los horarios', `set_dose_custom_${med.id}`)],
       ])
     );
   }

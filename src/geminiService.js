@@ -50,16 +50,18 @@ DEBES responder ÚNICAMENTE con un JSON válido (sin markdown, sin explicación)
   }
 }
 
-REGLAS DE MODO:
+REGLAS DE MODO E INSTRUCCIONES:
+- Si el médico usa letras de comidas como "D" (Desayuno), "A" (Almuerzo), "C" (Cena) o menciona comidas explícitamente: Asume modo "times". Asigna los horarios por defecto: D=08:00, A=13:00, C=20:00 (o los que correspondan).
+- MUY IMPORTANTE: Si menciona "D, A, C" o comidas, pon una aclaración en el campo "instrucciones" detallando esos momentos. Ej: "Se debe tomar en Desayuno, Almuerzo y Cena".
 - Si dice "cada X horas" → modo: "interval", frecuencia_horas: X, horarios: null
 - Si dice horas específicas ("8am y 2pm") → modo: "times", horarios: ["08:00", "14:00"]
 - Si dice "Reprogramar X a las 3pm" → intent: "reschedule", llenar el objeto "reschedule".
 - Si el texto NO es receta ni reprogramación → intent: "chat".
 
 Ejemplos:
-- "Ibuprofeno 600mg cada 8 horas por 5 días" → intent: "prescription", llenar medications...
-- "Reprogramar Omeprazol a las 10:30 de la mañana" → intent: "reschedule", reschedule: {"medicamento": "Omeprazol", "modo": "times", "horarios": ["10:30"]}
-- "Hola, ¿cómo estás?" → intent: "chat", medications: [], reschedule: null`;
+- "Ibuprofeno 600mg cada 8 horas" → intent: "prescription"
+- "Paracetamol D, A, C" → intent: "prescription", horarios: ["08:00", "13:00", "20:00"], instrucciones: "Tomar en el Desayuno, Almuerzo y Cena"
+- "Reprogramar Omeprazol a las 10:30 de la mañana" → intent: "reschedule"
 
 /**
  * Analiza una receta en texto y extrae medicamentos
@@ -127,6 +129,7 @@ async function chat(userMessage, context = '') {
 }
 
 async function analyzeTimezone(locationText) {
+  // ... existing implementation
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
@@ -144,10 +147,36 @@ async function analyzeTimezone(locationText) {
   }
 }
 
+async function analyzeCustomTimes(text) {
+  try {
+    const prompt = `Extrae de este texto los horarios mencionados en formato 24h (HH:MM).
+Si el usuario dice "desayuno" asume 08:00, "almuerzo" asume 13:00, "cena" asume 20:00.
+Si dice algo como "media hora antes del desayuno", calcúlalo (07:30).
+Devuelve ÚNICAMENTE un array JSON plano de strings. Si no hay tiempos válidos, devuelve [].
+Ejemplos:
+"A las 9 de la mañana, a las 1 de la tarde y a las 7 de la noche" -> ["09:00", "13:00", "19:00"]
+"Después del almuerzo y cena" -> ["14:00", "21:00"]
+"8am" -> ["08:00"]`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [{ role: 'user', parts: [{ text: `${prompt}\n\nTexto: "${text}"` }] }],
+    });
+    
+    const cleaned = response.text.trim().replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const arr = JSON.parse(cleaned);
+    return Array.isArray(arr) ? arr : [];
+  } catch (error) {
+    console.error('Error analizando horarios custom:', error);
+    return [];
+  }
+}
+
 module.exports = {
   RateLimitError,
   analyzePrescriptionText,
   analyzePrescriptionImage,
   chat,
   analyzeTimezone,
+  analyzeCustomTimes
 };
